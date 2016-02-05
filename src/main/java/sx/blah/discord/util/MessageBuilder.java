@@ -32,6 +32,12 @@ import sx.blah.discord.handle.obj.Channel;
 public class MessageBuilder {
 	private String content = "";
 	private String channelID;
+	private boolean tts = false;
+	
+	public MessageBuilder withTTS() {
+		this.tts = true;
+		return this;
+	}
 
     /**
      * Sets the content of the message.
@@ -104,7 +110,7 @@ public class MessageBuilder {
 			throw new RuntimeException("You need content and a channel ID to send a message!");
 		} else {
 			try {
-				DiscordClient.get().sendMessage(content, channelID);
+				DiscordClient.get().sendMessage(content, channelID, tts);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

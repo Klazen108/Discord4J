@@ -48,7 +48,7 @@ public class AnnotatedTestBot {
     @EventSubscriber public void meme(MessageReceivedEvent event) {
         if(event.getMessage().getContent().startsWith(".!test")) {
             try {
-                event.getMessage().reply("It works!");
+                event.getMessage().reply("It works!",false);
             } catch (Exception e) {
                 e.printStackTrace();
             }

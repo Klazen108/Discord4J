@@ -94,8 +94,13 @@ public class Message {
      * object before your content
      *
      * @param content Message to send.
+     * @param tts	  True to have the message sent with TTS enabled
      */
+    public void reply(String content, boolean tts) throws IOException, ParseException {
+        DiscordClient.get().sendMessage(String.format("%s, %s", this.getAuthor(), content), this.getChannel().getID(),tts);
+    }
+    
     public void reply(String content) throws IOException, ParseException {
-        DiscordClient.get().sendMessage(String.format("%s, %s", this.getAuthor(), content), this.getChannel().getID());
+    	reply(content,false);
     }
 }

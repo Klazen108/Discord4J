@@ -22,6 +22,7 @@ package sx.blah.discord;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.exceptions.WebsocketNotConnectedException;
 import org.java_websocket.handshake.ServerHandshake;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -77,6 +78,13 @@ public final class DiscordClient {
      * messages.
      */
     private long heartbeat;
+    
+    /**
+     * Time (in ms) to wake up before the heartbeat
+     * interval completes in order to send the keep
+     * alive message.
+     */
+    private static final long HEARTBEAT_BUFFER = 1000;
 
     /**
      * Local copy of all guilds/servers.
@@ -203,16 +211,17 @@ public final class DiscordClient {
      *
      * @param content   The actual message to send
      * @param channelID The channel to send the message to
+     * @param tts		True to have the message sent with TTS enabled
      * @return The message that was sent.
      * @throws IOException
      * @throws ParseException
      */
-    public Message sendMessage(String content, String channelID) throws IOException, ParseException {
+    public Message sendMessage(String content, String channelID, boolean tts) throws IOException, ParseException {
         if (null != ws) {
 
             try {
                 String response = Requests.POST.makeRequest(DiscordEndpoints.CHANNELS + channelID + "/messages",
-                        new StringEntity("{\"content\":\"" + content + "\",\"mentions\":[]}","UTF-8"),
+                        new StringEntity("{\"content\":\"" + content + "\",\"mentions\":[],\"tts\":"+(tts?"true":"false")+"}","UTF-8"),
                         new BasicNameValuePair("authorization", token),
                         new BasicNameValuePair("content-type", "application/json"));
 
@@ -525,11 +534,21 @@ public final class DiscordClient {
                         new Thread(() -> {
                             // Keep alive
                             while (null != ws) {
-                                long l;
-                                if ((l = (System.currentTimeMillis() - timer)) >= heartbeat) {
+                                long l = (System.currentTimeMillis() - timer);
+                                if (l >= (heartbeat-HEARTBEAT_BUFFER)) {
                                     Discord4J.logger.debug("Sending keep alive... ({}). Took {} ms.", System.currentTimeMillis(), l);
-                                    send("{\"op\":1,\"d\":" + System.currentTimeMillis() + "}");
+                                    try {
+                                    	send("{\"op\":1,\"d\":" + System.currentTimeMillis() + "}");
+                                    } catch (WebsocketNotConnectedException e) {
+                                    	ws = null;
+                                    }
                                     timer = System.currentTimeMillis();
+                                } else {
+                                	try {
+										Thread.sleep((heartbeat-HEARTBEAT_BUFFER)-l);
+									} catch (InterruptedException e) {
+										//Empty on purpose - if interrupted we'll loop around and check the timer again
+									}
                                 }
                             }
                         }).start();
@@ -751,11 +770,22 @@ public final class DiscordClient {
                         }
                         break;
 
+                    case "VOICE_STATE_UPDATE":
+                    case "GUILD_MEMBER_UPDATE":
+                    case "GUILD_ROLE_CREATE":
+                    case "GUILD_ROLE_UPDATE":
+                    	Discord4J.logger.debug("Ignoring message recieved: {}",s);
+                        break;
+
                     default:
                         Discord4J.logger.warn("Unknown message received: {} (ignoring): {}", s, frame);
                 }
             } catch (ParseException e) {
                 e.printStackTrace();
+            } catch (WebsocketNotConnectedException we) {
+            	System.err.println("Error in discord client: Websocket not connected!");
+            	we.printStackTrace();
+            	ws = null;
             }
         }
 
