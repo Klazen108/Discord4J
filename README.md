@@ -1,3 +1,5 @@
+#This project is no longer maintained. See [austinv11's fork](https://github.com/austinv11/Discord4J).
+
 # Discord4J  
 ![](https://travis-ci.org/nerd/Discord4J.svg)  
 Java interface for the unofficial [Discord](https://discordapp.com/) API, written in Java 8.
@@ -19,6 +21,7 @@ All dependencies are managed via Maven with pom.xml.
 * [Apache HTTPClient and HTTPCore](https://hc.apache.org/)
 * [JSON Simple](https://github.com/fangyidong/json-simple)
 * [Java Websocket](https://github.com/TooTallNate/Java-WebSocket)
+* [Apache Commons Lang3](https://commons.apache.org/proper/commons-lang/)
 
 
 ### Pull requests
